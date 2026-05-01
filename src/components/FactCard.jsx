@@ -5,15 +5,15 @@ const FactCard = ({ fact }) => {
   if (!fact) return null;
 
   return (
-    <div className="fact-card animate-fade-in-up">
+    <aside className="fact-card animate-fade-in-up" aria-label="Did you know?">
       <div className="fact-icon">
         <Lightbulb size={20} />
       </div>
       <div className="fact-text">
         {fact}
       </div>
-    </div>
+    </aside>
   );
 };
 
-export default FactCard;
+export default React.memo(FactCard);

@@ -40,4 +40,4 @@ const MessageBubble = ({ message }) => {
   );
 };
 
-export default MessageBubble;
+export default React.memo(MessageBubble);

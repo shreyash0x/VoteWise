@@ -1,11 +1,10 @@
 import React from 'react';
-import * as Icons from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 
-const InteractiveCard = ({ option, onClick }) => {
-  const IconComponent = Icons[option.icon] || Icons.ChevronRight;
+const InteractiveCard = ({ option, onClick, IconComponent }) => {
 
   return (
-    <button className="interactive-card" onClick={() => onClick(option)}>
+    <button className="interactive-card" onClick={() => onClick(option)} aria-label={option.label}>
       <div className="card-icon-wrapper">
         <IconComponent size={24} className="card-icon" />
       </div>
@@ -13,9 +12,9 @@ const InteractiveCard = ({ option, onClick }) => {
         <span className="card-title">{option.label}</span>
         {option.desc && <span className="card-desc">{option.desc}</span>}
       </div>
-      <Icons.ChevronRight size={18} className="card-arrow" />
+      <ChevronRight size={18} className="card-arrow" />
     </button>
   );
 };
 
-export default InteractiveCard;
+export default React.memo(InteractiveCard);

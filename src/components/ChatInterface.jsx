@@ -1,10 +1,24 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import MessageBubble from './MessageBubble';
 import InteractiveCard from './InteractiveCard';
 import ProgressTracker from './ProgressTracker';
 import FactCard from './FactCard';
 import { initialGreeting, conversations } from '../data/conversations';
-import * as Icons from 'lucide-react';
+import { 
+  UserPlus, ListChecks, MapPin, HelpCircle, 
+  FileSignature, CheckSquare, Vote, BarChart, 
+  ArrowLeft, ArrowRight, Home, FileText, 
+  CreditCard, XCircle, GraduationCap, Users, 
+  ChevronRight 
+} from 'lucide-react';
+
+const iconMap = {
+  UserPlus, ListChecks, MapPin, HelpCircle, 
+  FileSignature, CheckSquare, Vote, BarChart, 
+  ArrowLeft, ArrowRight, Home, FileText, 
+  CreditCard, XCircle, GraduationCap, Users, 
+  ChevronRight
+};
 
 const ChatInterface = () => {
   const [messages, setMessages] = useState([
@@ -12,7 +26,27 @@ const ChatInterface = () => {
   ]);
   const [isTyping, setIsTyping] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
+  const [mode, setMode] = useState('Beginner');
   const messagesEndRef = useRef(null);
+
+  const adaptResponseText = useCallback((text, fact, currentMode) => {
+    if (!text) return text;
+    // Don't adapt the initial greeting or very short texts
+    if (text.length < 50) return text; 
+
+    if (currentMode === 'Quick') {
+      const lines = text.split('\n').filter(l => l.trim().length > 0);
+      return "⚡ **Quick Summary:**\n" + lines.map(l => l.startsWith('*') || /^\d+\./.test(l.trim()) ? l : `* ${l}`).join('\n');
+    }
+    if (currentMode === 'Deep') {
+      return text + (fact ? `\n\n📚 **Deep Dive:**\n${fact}` : "");
+    }
+    // Beginner mode adds friendly intro
+    if (text.includes('**Step') || text.includes('**Tips') || text.includes('To register')) {
+      return "👋 **Here's a simple explanation:**\n\n" + text;
+    }
+    return text;
+  }, []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -22,7 +56,7 @@ const ChatInterface = () => {
     scrollToBottom();
   }, [messages, isTyping]);
 
-  const handleOptionSelect = (option) => {
+  const handleOptionSelect = useCallback((option) => {
     const userMessage = { id: Date.now(), sender: 'user', text: option.label };
     setMessages(prev => [...prev, userMessage]);
     
@@ -35,11 +69,17 @@ const ChatInterface = () => {
           setCurrentStep(nextConvo.step);
         }
         
+        let enhancedOptions = [...nextConvo.options];
+        // Smart Suggestion Logic: If no 'main_menu' option exists, add one.
+        if (!enhancedOptions.some(opt => opt.targetId === 'main_menu')) {
+          enhancedOptions.push({ label: "💡 Suggestion: Main Menu", targetId: "main_menu", icon: "Home" });
+        }
+
         const botMessage = {
           id: Date.now() + 1,
           sender: 'bot',
-          text: nextConvo.text,
-          options: nextConvo.options,
+          text: adaptResponseText(nextConvo.text, nextConvo.fact, mode),
+          options: enhancedOptions,
           fact: nextConvo.fact
         };
         setMessages(prev => [...prev, botMessage]);
@@ -54,12 +94,12 @@ const ChatInterface = () => {
       }
       setIsTyping(false);
     }, 1000); // Wait 1s for typing animation
-  };
+  }, [adaptResponseText, mode]);
 
-  const handleRestart = () => {
+  const handleRestart = useCallback(() => {
     setMessages([{ id: Date.now(), sender: 'bot', ...initialGreeting }]);
     setCurrentStep(0);
-  };
+  }, []);
 
   const currentBotMessage = messages.filter(m => m.sender === 'bot').pop();
   const currentOptions = currentBotMessage?.options || [];
@@ -69,7 +109,7 @@ const ChatInterface = () => {
   return (
     <div className="journey-layout">
       {/* Sidebar: Progress Tracker */}
-      <div className="sidebar-container">
+      <aside className="sidebar-container" aria-label="Sidebar">
         <div className="sidebar-header">
           <div className="logo-container">
             <div className="ai-orb mini-orb">
@@ -78,9 +118,16 @@ const ChatInterface = () => {
             </div>
             <h1>VoteWise</h1>
           </div>
-          <button onClick={handleRestart} className="restart-btn" title="Start Over">
-            Restart
-          </button>
+          <div className="header-actions">
+            <select value={mode} onChange={(e) => setMode(e.target.value)} className="mode-select" aria-label="Learning Mode">
+              <option value="Beginner">Beginner</option>
+              <option value="Quick">Quick</option>
+              <option value="Deep">Deep</option>
+            </select>
+            <button onClick={handleRestart} className="restart-btn" title="Start Over" aria-label="Restart conversation">
+              Restart
+            </button>
+          </div>
         </div>
         <div className="sidebar-content">
           <ProgressTracker currentStep={currentStep} />
@@ -91,11 +138,11 @@ const ChatInterface = () => {
             </div>
           </div>
         </div>
-      </div>
+      </aside>
 
       {/* Main Area: Chat Interface */}
-      <div className="chat-container main-content-area">
-        <div className="chat-messages">
+      <main className="chat-container main-content-area">
+        <div className="chat-messages" aria-live="polite" aria-relevant="additions">
           {messages.map((msg) => (
             <div key={msg.id} className="message-row">
               {msg.isHero ? (
@@ -134,9 +181,9 @@ const ChatInterface = () => {
             isHeroMode ? (
               <div className="quick-chips-container animate-fade-in-up">
                 {currentOptions.map((opt, idx) => {
-                  const Icon = Icons[opt.icon] || Icons.ChevronRight;
+                  const Icon = iconMap[opt.icon] || ChevronRight;
                   return (
-                    <button key={idx} className="quick-chip" onClick={() => handleOptionSelect(opt)}>
+                    <button key={idx} className="quick-chip" onClick={() => handleOptionSelect(opt)} aria-label={opt.label}>
                       <Icon size={16} />
                       <span>{opt.label}</span>
                     </button>
@@ -146,17 +193,17 @@ const ChatInterface = () => {
             ) : (
               <div className="interactive-grid">
                 {currentOptions.map((opt, idx) => (
-                  <InteractiveCard key={idx} option={opt} onClick={handleOptionSelect} />
+                  <InteractiveCard key={idx} option={opt} onClick={handleOptionSelect} IconComponent={iconMap[opt.icon] || ChevronRight} />
                 ))}
               </div>
             )
           ) : (
-            <div className="waiting-placeholder">
+            <div className="waiting-placeholder" aria-live="polite" aria-atomic="true">
                {isTyping ? "VoteWise is thinking..." : "End of conversation."}
             </div>
           )}
         </div>
-      </div>
+      </main>
     </div>
   );
 };

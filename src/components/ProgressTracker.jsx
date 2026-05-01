@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckCircle2, Circle } from 'lucide-react';
+import { CheckCircle2 } from 'lucide-react';
 
 const steps = [
   { id: 1, title: 'Registration' },
@@ -9,16 +9,22 @@ const steps = [
 ];
 
 const ProgressTracker = ({ currentStep }) => {
+  const completedSteps = Math.min(currentStep, 4);
+  const isAllComplete = currentStep >= 4;
+
   return (
-    <div className="progress-tracker">
-      <h3 className="tracker-title">Election Journey</h3>
-      <div className="timeline">
+    <nav className="progress-tracker" aria-label="Election Journey Progress">
+      <div className="tracker-header">
+        <h3 className="tracker-title">Election Journey</h3>
+        <span className="tracker-subtitle">Step {completedSteps}/4</span>
+      </div>
+      <ol className="timeline" style={{ listStyle: 'none', padding: 0, margin: 0 }}>
         {steps.map((step, index) => {
           const isCompleted = currentStep > step.id;
           const isActive = currentStep === step.id;
           
           return (
-            <div key={step.id} className={`timeline-item ${isActive ? 'active' : ''} ${isCompleted ? 'completed' : ''}`}>
+            <li key={step.id} className={`timeline-item ${isActive ? 'active' : ''} ${isCompleted ? 'completed' : ''}`}>
               <div className="timeline-icon-container">
                 {isCompleted ? (
                   <CheckCircle2 size={24} className="step-icon completed-icon" />
@@ -32,12 +38,18 @@ const ProgressTracker = ({ currentStep }) => {
               <div className="timeline-content">
                 <span className="step-title">{step.title}</span>
               </div>
-            </div>
+            </li>
           );
         })}
-      </div>
-    </div>
+      </ol>
+      {isAllComplete && (
+        <div className="completion-message animate-fade-in-up">
+          <CheckCircle2 size={18} className="completion-icon" />
+          <span>Journey Complete! Ready to vote.</span>
+        </div>
+      )}
+    </nav>
   );
 };
 
-export default ProgressTracker;
+export default React.memo(ProgressTracker);

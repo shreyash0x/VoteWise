@@ -10,6 +10,7 @@ const OptionsList = ({ options, onOptionSelect }) => {
           key={index}
           className="option-button"
           onClick={() => onOptionSelect(option)}
+          aria-label={option.label}
         >
           {option.label}
         </button>
@@ -18,4 +19,4 @@ const OptionsList = ({ options, onOptionSelect }) => {
   );
 };
 
-export default OptionsList;
+export default React.memo(OptionsList);
