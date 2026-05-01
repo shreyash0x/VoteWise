@@ -90,7 +90,11 @@ app.use('/api/*', (req, res) => {
 // Serve static frontend files if in production (assuming Vite builds to dist)
 app.use(express.static(path.join(__dirname, 'dist')));
 
-app.get('*', (req, res) => {
+app.get('*', (req, res, next) => {
+  // Prevent catching API routes and static asset requests that weren't found
+  if (req.path.startsWith('/api/') || req.path.startsWith('/assets/')) {
+    return next();
+  }
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
